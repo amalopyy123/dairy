@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Diary</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.css">
+    <script src="/js/jquery-3.7.1.js"></script>
+    <script src="/bootstrap/js/bootstrap.js"></script>
+    <style type="text/css">
+        .page-header {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .page-content {
+            margin-top: 30px;
+        }
+
+        .search-type div {
+            display: inline-block;
+            margin-right: 15px;
+        }
+
+        .textarea-edit {
+            width: 100%;
+            min-height: 200px;
+        }
+
+        .input-edit {
+            width: 100%;
+        }
+
+        .confirm-wrapper {
+            text-align: center;
+        }
+
+        .header-right .input-group {
+            float: left;
+            margin-left: 5px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        #confirm-message {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container page-header">
+    <div class="row">
+        <div class="header-left col-sm-4">
+            <div class="input-group">
+                <input type="text" id="txt-search" class="form-control" placeholder="Search">
+                <div class="input-group-btn">
+                    <button id="btn-search" class="btn btn-default">
+                        <span>Go</span>
+                    </button>
+                </div>
+            </div>
+            <div>
+                    <span class="search-type">
+                        <div><input type="checkbox" id="search-nId"/>nId</div>
+                        <div><input type="checkbox" id="search-day"/>day</div>
+                        <div><input type="checkbox" id="search-content" checked="checked"/>content</div>
+                        <div><input type="checkbox" id="search-memo"/>memo</div>
+                    </span>
+            </div>
+        </div>
+        <div class="header-middle col-sm-2">OR</div>
+        <div class="header-right col-sm-4">
+            <div id="filter-day">
+                <div class="input-group col-sm-5">
+                    <input type="text" class="form-control" id="input-from-day"/>
+
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">From
+                            <span class="caret"></span>
+                        </button>
+                        <ul id="from-day-ul" class="date-dropdown dropdown-menu pull-right">
+                        </ul>
+                    </div>
+                    <!-- /btn-group -->
+                </div>
+                <div class="input-group col-sm-4">
+                    <input type="text" class="form-control" id="input-to-day"/>
+
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">To
+                            <span class="caret"></span>
+                        </button>
+                        <ul id="to-day-ul" class="to-day-ul date-dropdown dropdown-menu pull-right">
+                        </ul>
+                    </div>
+                    <!-- /btn-group -->
+                </div>
+                <div class="input-group col-sm-1">
+                    <button type="button" id="btn-search-by-day" class="btn btn-default">Go</button>
+                </div>
+                <div class="clear">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container page-content">
+    <table id="table-data-list" class="table table-striped">
+        <thead>
+        <tr>
+            <th>id</th>
+            <th>day</th>
+            <th>content</th>
+            <th>memo</th>
+            <th>updated_at</th>
+            <th>edit</th>
+        </tr>
+        </thead>
+        <tbody id="tbody-data-list">
+        </tbody>
+    </table>
+</div>
+<div class="container">
+    <table id="table-data-edit" class="table table-striped">
+        <thead>
+        <tr>
+            <th>field</th>
+            <th>value</th>
+        </tr>
+        </thead>
+        <tbody id="tbody-data-edit">
+        </tbody>
+    </table>
+    <div class="confirm-wrapper">
+        <button type="button" class="btn btn-info btn-confirm" id="btn-confirm">Confirm</button>
+        &nbsp;
+        <button type="button" class="btn btn-info btn-new" id="btn-new">New</button>
+        <div id="confirm-message"></div>
+    </div>
+</div>
+
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script>
+    let listData = [];
+    let currentEditId = 0;
+    let days = [];
+    let showError = function (message) {
+        $('#confirm-message').removeClass('bg-success').addClass('bg-danger').html(message);
+    }
+    let showSuccess = function (message) {
+        $('#confirm-message').removeClass('bg-danger').addClass('bg-success').html(message);
+    }
+    let refreshGrid = function () {
+        let strTbodyData = '';
+        listData.forEach(lineData => {
+            console.log(lineData);
+            strLineData = `
+<tr>
+<td>${lineData.nId}</td>
+<td>${lineData.day}</td>
+<td>${lineData.content}</td>
+<td>${lineData.memo}</td>
+<td>${lineData.updated_at}</td>
+<td><button type="button" class="btn btn-default" onClick="editData(${lineData.nId})">Edit</button></td>
+</tr>`;
+            strTbodyData += strLineData;
+        });
+        $("#tbody-data-list").html(strTbodyData);
+    }
+
+    let convertReturnedDays = function (returnedDays) {
+        days = [];
+        returnedDays.forEach(element => {
+            days.push(element['day']);
+        });
+        refreshDayUl();
+    }
+
+    let refreshDayUl = function () {
+        let strUlData = '';
+        days.forEach(lineData => {
+            strLineData = `
+<li><a href="#">${lineData}</a></li>
+`;
+            strUlData += strLineData;
+            $("#from-day-ul").html(strUlData);
+            $("#to-day-ul").html(strUlData);
+            $("#from-day-ul li").click(function (e) {
+                e.preventDefault();
+                $('#input-from-day').val(this.innerText);
+                if ($('#input-to-day').val() == '') {
+                    $('#input-to-day').val(this.innerText);
+                }
+            });
+            $("#to-day-ul li").click(function (e) {
+                e.preventDefault();
+                $('#input-to-day').val(this.innerText);
+            });
+        });
+    }
+
+    $("#btn-search").click(function (e) {
+        e.preventDefault();
+        let searchFields = [];
+        if ($('#search-nId').is(':checked')) {
+            searchFields.push('nId');
+        }
+        if ($('#search-day').is(':checked')) {
+            searchFields.push('day');
+        }
+        if ($('#search-content').is(':checked')) {
+            searchFields.push('content');
+        }
+        if ($('#search-memo').is(':checked')) {
+            searchFields.push('memo');
+        }
+        $.ajax({
+            type: "POST",
+            url: "function.php",
+            data: {
+                method: 'search',
+                value: $('#txt-search').val(),
+                fields: searchFields.join(',')
+            },
+            success: function (result) {
+                $("#tbody-data-list").html('');
+                let retJson = JSON.parse(result);
+                $("#test-receive").val(JSON.stringify(retJson));
+                listData = retJson.data;
+                refreshGrid();
+            },
+            error: function (result) {
+                showError('error');
+            }
+        });
+    });
+
+    let editData = function (nId) {
+        listData.forEach(lineData => {
+            if (lineData['nId'] == nId) {
+                currentEditId = nId;
+                let strTbodyData = `
+<tr><td>nId</td><td id="td-nId">${lineData.nId}</td></tr>
+<tr><td>day</td><td><input type="text" class="input-edit" id="edit-day" value="${lineData.day}"/></td></tr>
+<tr><td>content</td><td><textarea class="textarea-edit" id="edit-content">${lineData.content}</textarea></td></tr>
+<tr><td>memo</td><td><textarea class="textarea-edit" id="edit-memo">${lineData.memo}</textarea></td></tr>
+                `;
+                $("#tbody-data-edit").html(strTbodyData);
+            }
+        });
+    }
+
+    $("#btn-confirm").click(function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: "POST",
+            url: "function.php",
+            data: {
+                method: currentEditId ? 'update' : 'insert',
+                nId: currentEditId,
+                day: $('#edit-day').val(),
+                content: $('#edit-content').val(),
+                memo: $('#edit-memo').val(),
+            },
+            success: function (result) {
+                let retJson = JSON.parse(result);
+                if (retJson.status) {
+                    //success
+                    showSuccess(retJson.message);
+                    if (currentEditId) {
+                        //update
+                        listData.forEach((lineData, index) => {
+                            if (lineData['nId'] == currentEditId) {
+                                listData[index].day = $('#edit-day').val();
+                                listData[index].content = $('#edit-content').val();
+                                listData[index].memo = $('#edit-memo').val();
+                                listData[index].updated_at = retJson.updated_at;
+                            }
+                        });
+                    } else {
+                        //insert
+                        listData.push(
+                            {
+                                nId: retJson.nId,
+                                day: $('#edit-day').val(),
+                                content: $('#edit-content').val(),
+                                memo: $('#edit-memo').val(),
+                                updated_at: retJson.updated_at,
+                            });
+                    }
+                    convertReturnedDays(retJson.days);
+                } else {
+                    //failed
+                    showError(retJson.message);
+                }
+
+                refreshGrid();
+            },
+            error: function (result) {
+                showError('error');
+            }
+        });
+    });
+
+    $("#btn-new").click(function (e) {
+        e.preventDefault();
+        currentEditId = 0;
+        $('#td-nId').html('');
+    });
+
+    $("#btn-search-by-day").click(function (e) {
+        e.preventDefault();
+        let toDayValue = parseInt($('#input-to-day').val());
+        let fromDayValue = parseInt($('#input-from-day').val());
+        if (toDayValue < fromDayValue) {
+            //交换时间
+            let tmpDayValue = toDayValue;
+            toDayValue = fromDayValue;
+            fromDayValue = tmpDayValue;
+
+            $('#input-to-day').val(toDayValue);
+            $('#input-from-day').val(fromDayValue);
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "function.php",
+            data: {
+                method: 'searchByDay',
+                from_day: fromDayValue,
+                to_day: toDayValue
+            },
+            success: function (result) {
+                $("#tbody-data-list").html('');
+                let retJson = JSON.parse(result);
+                $("#test-receive").val(JSON.stringify(retJson));
+                listData = retJson.data;
+                refreshGrid();
+            },
+            error: function (result) {
+                showError('error');
+            }
+        });
+    });
+
+    $(document).ready(function () {
+            $.ajax({
+                type: "POST",
+                url: "function.php",
+                data: {
+                    method: 'getDays'
+                },
+                success: function (result) {
+                    let retJson = JSON.parse(result);
+                    convertReturnedDays(retJson.data);
+                },
+                error: function (result) {
+                    showError('Failed to retrive records');
+                }
+            });
+        }
+    );
+
+</script>
+</body>
+
+</html>
