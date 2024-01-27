@@ -45,6 +45,11 @@
             clear: both;
         }
 
+        #filter-day .input-group-btn .date-dropdown {
+            max-height: 500px;
+            overflow: auto;
+        }
+
         #confirm-message {
             margin-top: 20px;
             margin-bottom: 20px;
@@ -111,7 +116,7 @@
     </div>
 </div>
 <div class="container page-content">
-    <table id="table-data-list" class="table table-striped">
+    <table id="table-data-list" class="table table-bordered table-striped">
         <thead>
         <tr>
             <th>id</th>
@@ -135,6 +140,22 @@
         </tr>
         </thead>
         <tbody id="tbody-data-edit">
+        <tr>
+            <td>nId</td>
+            <td id="td-nId"></td>
+        </tr>
+        <tr>
+            <td>day</td>
+            <td><input type="text" class="input-edit" id="edit-day" value=""></td>
+        </tr>
+        <tr>
+            <td>content</td>
+            <td><textarea class="textarea-edit" id="edit-content"></textarea></td>
+        </tr>
+        <tr>
+            <td>memo</td>
+            <td><textarea class="textarea-edit" id="edit-memo"></textarea></td>
+        </tr>
         </tbody>
     </table>
     <div class="confirm-wrapper">
