@@ -132,7 +132,7 @@ SQL;
         }
         $ret = array();
         $sql = <<<SQL
-select day from `note`
+select day from `note` order by day desc
 SQL;
         $result = $link->query($sql);
         if ($result) {
