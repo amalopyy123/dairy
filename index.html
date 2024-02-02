@@ -315,6 +315,8 @@
                                 memo: $('#edit-memo').val(),
                                 updated_at: retJson.updated_at,
                             });
+                        currentEditId = retJson.nId;
+                        $('#td-nId').html(currentEditId);
                     }
                     convertReturnedDays(retJson.days);
                 } else {
